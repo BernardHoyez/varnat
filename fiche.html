@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche — VarNat</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2e5339">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="icons/icon-192.png">
+</head>
+<body>
+<header class="site-header">
+  <div class="title-row"><span class="leaf">🌿</span><h1>VarNat — Nature du Var</h1></div>
+  <nav class="site-nav">
+    <a href="index.html">Accueil</a>
+    <a href="flore.html" id="nav-flore">Flore</a>
+    <a href="faune.html" id="nav-faune">Faune</a>
+    <a href="famille-vegetales.html">Familles végétales</a>
+  </nav>
+</header>
+<main>
+  <a class="back-link" id="back-link" href="flore.html">&larr; Retour à la liste</a>
+  <div class="fiche-header">
+    <span class="cat" id="cat-label">Fiche</span>
+    <h1 id="fiche-title">Chargement…</h1>
+  </div>
+  <img id="fiche-photo" class="fiche-photo" style="display:none;" alt="">
+  <section class="ai-comment" id="ai-box">
+    <h2>🔎 Comment reconnaître cette espèce ?</h2>
+    <p id="ai-comment">Chargement du commentaire…</p>
+  </section>
+</main>
+<footer class="site-footer">VarNat — Nature du Var</footer>
+<script>
+const params = new URLSearchParams(location.search);
+const type = params.get('type') === 'faune' ? 'faune' : 'flore';
+const slug = params.get('slug') || '';
+document.getElementById('back-link').href = type + '.html';
+document.getElementById('cat-label').textContent = type === 'faune' ? 'Faune' : 'Flore';
+document.getElementById('nav-' + type).classList.add('active');
+
+Promise.all([
+  fetch('data/' + type + '.json').then(r => r.json()),
+  fetch('data/commentaires.json').then(r => r.json())
+]).then(([data, comments]) => {
+  const found = data.find(s => s.slug === slug);
+  document.getElementById('fiche-title').textContent = found ? found.name : 'Fiche introuvable';
+  document.title = (found ? found.name : 'Fiche') + ' — VarNat';
+  const c = comments.find(x => x.slug === slug && x.type === type);
+  const p = document.getElementById('ai-comment');
+  if (c && c.commentaire) p.textContent = c.commentaire;
+  else p.innerHTML = 'Commentaire en attente de génération.<br><small>La page <a href="generateur.html">Générateur IA</a> permet de compléter automatiquement le catalogue.</small>';
+}).catch(() => {
+  document.getElementById('ai-comment').textContent = 'Impossible de charger les données.';
+});
+
+const photoEl = document.getElementById('fiche-photo');
+const photoUrl = 'photos/' + slug + '.jpg';
+const testImg = new Image();
+testImg.onload = () => { photoEl.src = photoUrl; photoEl.alt = slug; photoEl.style.display = 'block'; };
+testImg.onerror = () => { photoEl.style.display = 'none'; };
+testImg.src = photoUrl;
+
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+</script>
+</body>
+</html>
